@@ -71,7 +71,7 @@ main{margin-top:-40px;position:relative;z-index:2}
 .auth{max-width:380px;margin:12vh auto;padding:28px;background:var(--bg2);border-radius:14px;display:grid;gap:10px;text-align:center}
 .auth img{width:70px;margin:0 auto}
 #player{background:#000;z-index:80;overflow:hidden}#player.open{display:block}
-#v{width:100%;height:100%;background:#000}
+#v{width:100%;height:100%;background:#000}#vkf{position:absolute;inset:0;width:100%;height:100%;border:0;display:none}.vk #vkf{display:block}.vk #v,.vk .bar,.vk #tm,.vk .pr .pt,.vk .pr button:not(#nx):not(#eb){display:none}.vk .ptop{right:auto;background:0}.vk .pc{top:0;bottom:auto;left:auto;width:auto;background:0;padding-top:14px}.vk .pr{width:auto}.vk.hid .ptop,.vk.hid .pc{opacity:1;pointer-events:auto}.vk #el{bottom:auto;top:64px}
 .ptop,.pc{position:absolute;left:0;right:0;padding:14px 20px;transition:opacity .3s;display:flex;gap:12px;align-items:center}
 .ptop{top:0;background:linear-gradient(#000b,#0000)}.pc{bottom:0;flex-wrap:wrap;padding-bottom:calc(14px + env(safe-area-inset-bottom));background:linear-gradient(0deg,#000d,#0000)}
 .hid .ptop,.hid .pc{opacity:0;pointer-events:none}.hid{cursor:none}
@@ -100,7 +100,7 @@ main{margin-top:-40px;position:relative;z-index:2}
 <div class="ov" id="person"><div class="box"></div></div>
 <div class="ov" id="admin"><div class="box"></div></div>
 <div class="ov" id="player">
-<video id="v" playsinline></video>
+<video id="v" playsinline></video><iframe id="vkf" allow="autoplay;encrypted-media;fullscreen;picture-in-picture" allowfullscreen></iframe>
 <div class="ptop"><button data-close aria-label="Назад">←</button><b id="pn"></b></div>
 <div id="sk"></div><div id="el"></div>
 <div id="rt"><div><h2>Как вам?</h2><p class="mu" id="rn"></p><div class="st">
@@ -189,26 +189,43 @@ async function showPerson(id){const B=$("#person .box");B.innerHTML=`<div class=
  B.innerHTML=`<div class="db"><button class="x" data-close>✕</button><div style="display:flex;gap:18px;flex-wrap:wrap">${d.profile_path?`<img src="${IMG(d.profile_path,"w185")}" style="width:140px;border-radius:12px" alt="">`:""}<div style="flex:1;min-width:220px"><h1>${esc(d.name)}</h1><div class="mu">${[d.birthday,d.place_of_birth].filter(Boolean).map(esc).join(" · ")}</div><p style="margin-top:8px;max-height:200px;overflow:auto">${esc(d.biography||"Биографии пока нет.")}</p></div></div><h3>Где снимался(ась)</h3>
  <div class="cast">${f.map(c=>{const l=lib.find(m=>m.tmdb===c.id&&m.type===(c.media_type==="tv"?"tv":"movie"));return`<div class="cm" tabindex="0" ${l?`data-open="${l.id}"`:""} style="flex-basis:110px"><img src="${IMG(c.poster_path,"w185")}" style="border-radius:8px;width:100px;height:150px" alt=""><b>${esc(c.title||c.name)}</b><div class="${l?"":"mu"}" style="${l?"color:var(--g2)":""}">${l?"Есть в Акуре":(c.character||"")}</div></div>`}).join("")}</div></div>`}catch(e){B.innerHTML=`<div class="db"><button class="x" data-close>✕</button><p>Не удалось загрузить данные об актёре</p></div>`}}
 /* player */
-const V=$("#v"),PL=$("#player");let cur={},hideT,svT=0;
-const endOf=()=>{const E=eps(cur.m),e=E[cur.i],n=E[cur.i+1];return n&&n.url===e.url&&n.st>e.st?n.st:(V.duration||e.st+1)};
-function play(id,i){const m=M[id];if(!m)return;const p=P[id];if(i==null)i=p&&p.pct<.95?(p.ep||0):0;cur={m,i,done:0};$("#rt").style.display="none";
- const E=eps(m);const res=p&&p.pct<.95&&p.ep===i?p.t:null;if(!PL.classList.contains("open")){openOv(PL)}loadEp(res);bump()}
-function loadEp(res){const e=eps(cur.m)[cur.i];cur.done=0;cur.hls?.destroy();cur.hls=null;
- V.onloadedmetadata=()=>{V.currentTime=res??e.st??0;V.play().catch(()=>{})};
- if(/\.m3u8/i.test(e.url)&&window.Hls&&Hls.isSupported()){cur.hls=new Hls();cur.hls.loadSource(e.url);cur.hls.attachMedia(V)}else V.src=e.url;
- $("#pn").textContent=cur.m.title;$("#pt").innerHTML=`<b>${esc(cur.m.title)}</b> ${eps(cur.m).length>1?"С"+e.s+" · "+esc(e.t):""}`;$("#nx").style.display=eps(cur.m)[cur.i+1]?"":"none";
- $("#el").innerHTML=eps(cur.m).map((x,i)=>`<div class="ep" tabindex="0" data-pe="${i}"><b>${i+1}</b>${esc(x.t)}</div>`).join("");$("#eb").style.display=eps(cur.m).length>1?"":"none"}
-function goEp(i){const E=eps(cur.m),n=E[i],e=E[cur.i];if(!n)return;save();cur.i=i;cur.done=0;if(n.url===e.url){V.currentTime=n.st||0;$("#pt").innerHTML=`<b>${esc(cur.m.title)}</b> С${n.s} · ${esc(n.t)}`;$("#nx").style.display=E[i+1]?"":"none"}else loadEp(null)}
-function save(fin){if(!cur.m||!V.duration)return;const E=eps(cur.m),e=E[cur.i],en=endOf(),st=e.st||0,fr=Math.min(1,Math.max(0,(V.currentTime-st)/Math.max(1,en-st)));
- const pct=fin?1:(cur.i+fr)/E.length;const d={ep:cur.i,t:V.currentTime,pct,updated:Date.now()};P[cur.m.id]=d;setDoc(doc(db,"users",U.uid,"progress",cur.m.id),d,{merge:true}).catch(()=>{});svT=Date.now()}
-V.ontimeupdate=()=>{if(!cur.m)return;const E=eps(cur.m),e=E[cur.i],en=endOf(),st=e.st||0,t=V.currentTime,fr=Math.min(1,Math.max(0,(t-st)/Math.max(1,en-st)));
- $("#bf").style.width=fr*100+"%";$("#tm").textContent=fmt(en-t);const sk=$("#sk");
- if(e.ii&&t>=st&&t<e.ii-.5)sk.innerHTML=`<button data-skip="${e.ii}">Пропустить заставку</button>`;
- else if(e.cr&&t>=e.cr&&t<en-1)sk.innerHTML=`<button data-skip="end">${E[cur.i+1]?"Следующая серия":"Пропустить титры"}</button>`;else sk.innerHTML="";
- if(!cur.done&&t>=en-.4&&V.duration)finish();else if(Date.now()-svT>8000)save()};
-V.onended=()=>{if(!cur.done)finish()};
-function finish(){cur.done=1;const E=eps(cur.m);if(E[cur.i+1])return goEp(cur.i+1);V.pause();save(1);$("#rn").textContent=cur.m.title;$("#rt").style.display="grid";$("#rt button").focus()}
-function closePlayer(){if(cur.m&&!cur.done)save();V.pause();cur.hls?.destroy();V.removeAttribute("src");V.load();if(document.fullscreenElement)document.exitFullscreen();PL.classList.remove("open");stack=stack.filter(x=>x!==PL);cur.m=null;render();PL._f?.focus?.()}
+const V=$("#v"),PL=$("#player"),VKF=$("#vkf");let cur={},hideT,svT=0,vkp=null,vkT=0;
+const isVK=u=>/vk\.com|vkvideo\.ru/.test(u||""),parts=e=>String(e.url||"").split(/\s+\+\s+/).map(x=>x.trim()).filter(Boolean);
+const vkUrl=u=>{const m=u.match(/video(-?\d+)_(\d+)/)||u.match(/oid=(-?\d+)&(?:amp;)?id=(\d+)/);if(!m)return"";const h=(u.match(/[?&]hash=([0-9a-f]+)/)||u.match(/video-?\d+_\d+\/([0-9a-f]{10,})/)||[])[1];return`https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2&autoplay=1${h?"&hash="+h:""}`};
+const ask=f=>Promise.race([new Promise(r=>{try{const v=f(r);if(v&&v.then)v.then(r);else if(v!==undefined)r(v)}catch(x){r()}}),new Promise(r=>setTimeout(r,600))]);
+const endOf=()=>{const E=eps(cur.m),e=E[cur.i],n=E[cur.i+1];return parts(e).length===1&&n&&n.url===e.url&&n.st>e.st?n.st:(cur.dur||(e.st||0)+1)};
+const seekTo=t=>{if(PL.classList.contains("vk")){try{vkp.seek(t)}catch(x){}}else V.currentTime=t};
+function play(id,i){const m=M[id];if(!m)return;const p=P[id];if(i==null)i=p&&p.pct<.95?(p.ep||0):0;const same=p&&p.ep===i&&p.pct<.95;cur={m,i,pi:same?(p.pi||0):0,done:0,t:0,dur:0};$("#rt").style.display="none";if(!PL.classList.contains("open"))openOv(PL);loadEp(same?p.t:null);bump()}
+function vkLoad(e){const u=vkUrl(parts(e)[0]);if(!u){toast("Не удалось разобрать ссылку VK");return}
+ PL.classList.add("vk");V.pause();V.removeAttribute("src");vkp=null;VKF.src=u;
+ const go=()=>{try{vkp=VK.VideoPlayer(VKF);vkp.on("ended",()=>{if(!cur.done)finish()})}catch(x){}};
+ if(window.VK?.VideoPlayer)go();else{const sc=document.createElement("script");sc.src="https://vk.com/js/api/videoplayer.js";sc.onload=go;document.head.appendChild(sc)}
+ clearInterval(vkT);vkT=setInterval(async()=>{if(!vkp||!cur.m)return;const t=await ask(r=>vkp.getCurrentTime(r)),d=await ask(r=>vkp.getDuration(r));if(!(t>=0&&d>0))return;
+  if(!cur.seeked){cur.seeked=1;const s=cur.res??(eps(cur.m)[cur.i].st||0);if(s>2){seekTo(s);return}}tick(+t,+d)},700);
+ setTimeout(()=>$(".ptop button").focus(),800)}
+function loadEp(res){const e=eps(cur.m)[cur.i],pts=parts(e),E=eps(cur.m);cur.done=0;cur.seeked=0;cur.res=res;cur.hls?.destroy();cur.hls=null;clearInterval(vkT);
+ $("#pn").textContent=cur.m.title;$("#pt").innerHTML=`<b>${esc(cur.m.title)}</b> ${E.length>1?"С"+e.s+" · "+esc(e.t):""}${pts.length>1?" · часть "+((cur.pi||0)+1)+"/"+pts.length:""}`;
+ $("#nx").style.display=E[cur.i+1]?"":"none";$("#eb").style.display=E.length>1?"":"none";
+ $("#el").innerHTML=E.map((x,i)=>`<div class="ep" tabindex="0" data-pe="${i}"><b>${i+1}</b>${esc(x.t)}</div>`).join("");
+ if(isVK(pts[0]))return vkLoad(e);
+ PL.classList.remove("vk");VKF.removeAttribute("src");const u=pts[cur.pi||0],st=pts.length>1?0:(e.st||0);
+ V.onloadedmetadata=()=>{V.currentTime=res??st;V.play().catch(()=>{})};
+ if(/\.m3u8/i.test(u)&&window.Hls&&Hls.isSupported()){cur.hls=new Hls();cur.hls.loadSource(u);cur.hls.attachMedia(V)}else V.src=u;
+ if(pts[(cur.pi||0)+1]){cur.pre=document.createElement("video");cur.pre.preload="auto";cur.pre.muted=true;cur.pre.src=pts[cur.pi+1]}}
+function goEp(i){const E=eps(cur.m),n=E[i],e=E[cur.i];if(!n)return;save();const same=n.url===e.url&&parts(e).length===1;cur.i=i;cur.pi=0;cur.done=0;
+ if(same){seekTo(n.st||0);$("#pt").innerHTML=`<b>${esc(cur.m.title)}</b> С${n.s} · ${esc(n.t)}`;$("#nx").style.display=E[i+1]?"":"none"}else loadEp(null)}
+function save(fin){if(!cur.m||!cur.dur)return;const E=eps(cur.m),e=E[cur.i],pts=parts(e),en=endOf(),st=pts.length>1?0:(e.st||0),fr=Math.min(1,Math.max(0,(cur.t-st)/Math.max(1,en-st)));
+ const eff=pts.length>1?((cur.pi||0)+fr)/pts.length:fr,pct=fin?1:(cur.i+eff)/E.length,d={ep:cur.i,pi:cur.pi||0,t:cur.t,pct,updated:Date.now()};P[cur.m.id]=d;setDoc(doc(db,"users",U.uid,"progress",cur.m.id),d,{merge:true}).catch(()=>{});svT=Date.now()}
+function tick(t,dur){if(!cur.m)return;cur.t=t;cur.dur=dur;const E=eps(cur.m),e=E[cur.i],pts=parts(e),multi=pts.length>1,last=(cur.pi||0)>=pts.length-1,en=endOf(),st=multi?0:(e.st||0),fr=Math.min(1,Math.max(0,(t-st)/Math.max(1,en-st)));
+ $("#bf").style.width=fr*100+"%";$("#tm").textContent=(multi?`часть ${(cur.pi||0)+1}/${pts.length} · `:"")+fmt(en-t);
+ let h="";if(e.ii&&(!multi||!cur.pi)&&t>=st&&t<e.ii-.5)h=`<button data-skip="${e.ii}">Пропустить заставку</button>`;
+ else if(e.cr&&(!multi||last)&&t>=e.cr&&t<en-1)h=`<button data-skip="end">${E[cur.i+1]?"Следующая серия":"Пропустить титры"}</button>`;
+ const sk=$("#sk");if(sk.dataset.h!==h){sk.dataset.h=h;sk.innerHTML=h}
+ if(!cur.done&&dur&&t>=en-.4&&(!multi||last))finish();else if(Date.now()-svT>8000)save()}
+V.ontimeupdate=()=>{if(!PL.classList.contains("vk"))tick(V.currentTime,V.duration||0)};
+V.onended=()=>{if(cur.done||!cur.m)return;const pts=parts(eps(cur.m)[cur.i]);if(pts.length>1&&(cur.pi||0)<pts.length-1){cur.pi=(cur.pi||0)+1;loadEp(null)}else finish()};
+function finish(){cur.done=1;const E=eps(cur.m);if(E[cur.i+1])return goEp(cur.i+1);V.pause();try{vkp?.pause()}catch(x){}save(1);$("#rn").textContent=cur.m.title;$("#rt").style.display="grid";$("#rt button").focus()}
+function closePlayer(){if(cur.m&&!cur.done)save();clearInterval(vkT);vkp=null;V.pause();cur.hls?.destroy();V.removeAttribute("src");V.load();VKF.removeAttribute("src");PL.classList.remove("vk","open");if(document.fullscreenElement)document.exitFullscreen();stack=stack.filter(x=>x!==PL);cur.m=null;render();PL._f?.focus?.()}
 const bump=()=>{PL.classList.remove("hid");clearTimeout(hideT);hideT=setTimeout(()=>!V.paused&&!document.activeElement?.closest(".pc")&&PL.classList.add("hid"),3200)};
 PL.addEventListener("mousemove",bump);PL.addEventListener("touchstart",bump);
 const tog=()=>V.paused?V.play():V.pause(),seek=d=>{V.currentTime=Math.min(Math.max(V.currentTime+d,0),V.duration||1e9)};
@@ -218,7 +235,7 @@ $("#mu").onclick=()=>{V.muted=!V.muted;$("#mu").textContent=V.muted?"🔇":"🔊
 $("#eb").onclick=()=>{const e=$("#el");e.style.display=e.style.display==="block"?"none":"block"};
 $("#sd").onclick=()=>{const s=[1,1.25,1.5,2,.75],n=s[(s.indexOf(V.playbackRate)+1)%s.length];V.playbackRate=n;$("#sd").textContent=n+"×"};
 $("#fs").onclick=()=>document.fullscreenElement?document.exitFullscreen():PL.requestFullscreen?.();
-$("#bar").onclick=e=>{const r=e.currentTarget.getBoundingClientRect(),E=eps(cur.m),s=E[cur.i].st||0;V.currentTime=s+(e.clientX-r.left)/r.width*(endOf()-s)};
+$("#bar").onclick=e=>{const r=e.currentTarget.getBoundingClientRect(),x=eps(cur.m)[cur.i],s=parts(x).length>1?0:(x.st||0);V.currentTime=s+(e.clientX-r.left)/r.width*(endOf()-s)};
 /* admin */
 let found=null;
 $("#add").onclick=()=>{found=null;$("#admin .box").innerHTML=`<div class="fm"><button class="x" data-close>✕</button><h2>Добавить фильм или сериал</h2><label>Название и год</label><input id="at" placeholder="Гадкий я (2013)"><label>Тип</label><select id="aty"><option value="movie">Фильм</option><option value="tv">Сериал</option></select><button class="pri" id="af">Найти в TMDB</button><div id="ap"></div></div>`;
@@ -229,7 +246,7 @@ async function findM(){const raw=$("#at").value.trim(),type=$("#aty").value,mm=r
  const vs=(d.videos?.results||[]).filter(v=>v.site==="YouTube"&&v.type==="Trailer");
  found={id:type+"-"+d.id,tmdb:d.id,type,title:d.title||d.name,year:(d.release_date||d.first_air_date||"").slice(0,4),overview:d.overview||"",genres:(d.genres||[]).map(g=>g.name),poster:d.poster_path||"",backdrop:d.backdrop_path||"",rating:Math.round(d.vote_average*10)/10,runtime:d.runtime||d.episode_run_time?.[0]||0,seasons:d.number_of_seasons||0,studios:(d.production_companies||[]).slice(0,4).map(c=>c.name),cast:(d.credits?.cast||[]).slice(0,14).map(c=>({id:c.id,n:c.name,ch:c.character||"",p:c.profile_path||""})),trailer:(vs.find(v=>v.iso_639_1==="ru")||vs[0])?.key||"",added:Date.now()};
  $("#ap").innerHTML=`<div style="display:flex;gap:14px"><img src="${IMG(found.poster,"w185")}" style="width:100px;border-radius:8px" alt=""><div><b>${esc(found.title)}</b> (${found.year})<div class="mu">${esc(found.genres.join(", "))}<br>Актёров: ${found.cast.length} · трейлер: ${found.trailer?"есть":"нет"}</div></div></div>`+
- (type==="movie"?`<label>Ссылка на видео (mp4 или m3u8)</label><input id="vu" placeholder="https://…/film.mp4"><label>Титры начинаются (мм:сс, необязательно)</label><input id="vc" placeholder="1:32:10">`:
+ (type==="movie"?`<label>Ссылка на видео (mp4 или m3u8)</label><input id="vu" placeholder="ссылка VK Видео, или .mp4/.webm/.mov/.m3u8; части — через « + »"><label>Титры начинаются (мм:сс, необязательно)</label><input id="vc" placeholder="1:32:10">`:
  `<label>Серии: по одной строке — сезон | название | ссылка | начало | конец заставки | начало титров</label><textarea id="ve" placeholder="1 | Серия 1 | https://…/s1.mp4 | 0:00 | 1:30 | 43:10&#10;1 | Серия 2 | https://…/s1.mp4 | 45:00 | 46:20 | 1:28:00&#10;2 | Серия 1 | https://…/s2e1.mp4 | | |"></textarea><div class="mu">Целый сезон одним файлом — та же ссылка и тайм-код начала. Отдельные серии — свои ссылки.</div>`)+`<button class="pri" id="sv">Сохранить в каталог</button>`;
  $("#sv").onclick=saveM}catch(e){toast("Ошибка TMDB")}}
 async function saveM(){const d={...found};
@@ -240,7 +257,7 @@ async function saveM(){const d={...found};
 document.addEventListener("click",e=>{const t=e.target;
  if(t.closest("[data-close]"))return closeOv(t.closest(".ov"));
  const r=t.closest("[data-r]");if(r){setDoc(doc(db,"users",U.uid,"ratings",cur.m.id),{r:+r.dataset.r,t:Date.now()}).catch(()=>{});R[cur.m.id]=+r.dataset.r;toast("Спасибо за оценку!");return closePlayer()}
- const sk=t.closest("[data-skip]");if(sk){sk.dataset.skip==="end"?(eps(cur.m)[cur.i+1]?goEp(cur.i+1):finish()):V.currentTime=+sk.dataset.skip;return}
+ const sk=t.closest("[data-skip]");if(sk){sk.dataset.skip==="end"?(eps(cur.m)[cur.i+1]?goEp(cur.i+1):finish()):seekTo(+sk.dataset.skip);return}
  const pe=t.closest("[data-pe]");if(pe){goEp(+pe.dataset.pe);$("#el").style.display="none";return}
  const pl=t.closest("[data-play]");if(pl)return play(pl.dataset.play||pl.closest(".card").dataset.id);
  const ep=t.closest("[data-ep]");if(ep)return play(ep.dataset.id,+ep.dataset.ep);
@@ -257,7 +274,7 @@ function spatial(dir,root){const a=document.activeElement,els=[...root.querySele
 addEventListener("keydown",e=>{const k=e.key,top=stack[stack.length-1],tag=document.activeElement?.tagName;
  if(["Escape","Backspace","GoBack","BrowserBack"].includes(k)||[10009,461].includes(e.keyCode)){if(tag==="INPUT"||tag==="TEXTAREA")return k==="Escape"&&document.activeElement.blur();if(top&&top!==AU){e.preventDefault();$("#el").style.display==="block"?$("#el").style.display="none":closeOv(top)}return}
  if(k==="Enter"&&document.activeElement?.matches(".card,.ep,.cm")){e.preventDefault();document.activeElement.click();return}
- if(top===PL){bump();const inC=document.activeElement?.closest(".pc,#sk,#el,#rt,.ptop");
+ if(top===PL){bump();if(PL.classList.contains("vk")){if(k.startsWith("Arrow")){e.preventDefault();spatial(k,PL)}return}const inC=document.activeElement?.closest(".pc,#sk,#el,#rt,.ptop");
   if(k==="MediaPlayPause"||(k===" "&&!inC)||(k==="Enter"&&!inC)){e.preventDefault();return tog()}
   if(k==="f"||k==="F")return $("#fs").click();
   if(!k.startsWith("Arrow"))return;e.preventDefault();
