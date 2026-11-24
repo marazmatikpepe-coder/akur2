@@ -93,7 +93,7 @@ main{margin-top:-40px;position:relative;z-index:2}
 <div id="splash"><img src="logo.png" alt=""></div>
 <header id="hd" hidden><div class="lg"><img src="logo.png" alt="">Акур</div>
 <nav><button data-v="all" class="on">Главная</button><button data-v="movie">Фильмы</button><button data-v="tv">Сериалы</button><button data-v="hist">История</button></nav>
-<div class="sp"></div><input id="q" placeholder="Поиск" type="search"><button id="add" class="pri" hidden>＋ Добавить</button><button id="out">Выйти</button></header>
+<div class="sp"></div><input id="q" placeholder="Поиск" type="search"><button id="add" class="pri" hidden>＋ Добавить</button><button id="uidb" hidden>Мой ID</button><button id="out">Выйти</button></header>
 <main id="app"></main>
 <div class="ov" id="auth"></div>
 <div class="ov" id="detail"><div class="box"></div></div>
@@ -122,7 +122,7 @@ const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>(
 const IMG=(p,w)=>p?`https://image.tmdb.org/t/p/${w}${p}`:"";
 const tc=s=>String(s||"").trim().split(":").filter(x=>x!=="").reduce((a,b)=>a*60+(+b||0),0);
 const fmt=t=>{t=Math.max(0,t|0);const h=t/3600|0,m=(t%3600/60|0),s=t%60,p=n=>String(n).padStart(2,"0");return h?`${h}:${p(m)}:${p(s)}`:`${m}:${p(s)}`};
-const toast=s=>{const t=$("#toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",3500)};
+const toast=(s,ms=3500)=>{const t=$("#toast");t.textContent=s;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",ms)};
 let U,ADM=false,W={},TR=[],M={},P={},R={},S={v:"all",q:""},stack=[];
 const eps=m=>m.eps?.length?m.eps:[{s:1,t:m.title,url:m.url,st:0,ii:0,cr:m.cr||0}];
 /* overlays */
@@ -142,8 +142,8 @@ function authVerify(){AU.innerHTML=`<div class="auth"><img src="logo.png" alt=""
 onAuthStateChanged(auth,async u=>{U=u;if(!u){$("#hd").hidden=true;$("#app").innerHTML="";authForm();if(!AU.classList.contains("open"))openOv(AU);return}
  if(!u.emailVerified&&u.providerData[0]?.providerId==="password"){authVerify();if(!AU.classList.contains("open"))openOv(AU);return}
  closeOv(AU);await boot()});
-async function boot(){const ur=doc(db,"users",U.uid);let d=await getDoc(ur);if(!d.exists()){await setDoc(ur,{email:U.email,isAdmin:false,created:Date.now()});d=await getDoc(ur)}
- ADM=d.data().isAdmin===true;$("#add").hidden=!ADM;$("#hd").hidden=false;
+async function boot(){const ur=doc(db,"users",U.uid);let d;try{d=await getDoc(ur);if(!d.exists()){await setDoc(ur,{email:U.email,isAdmin:false,created:Date.now()});d=await getDoc(ur)}}catch(e){console.error("users:",e);d={data:()=>({})};toast("Firestore не пускает к users ("+(e.code||e.message)+"). Опубликуйте правила в Firestore → Rules",12000)}
+ ADM=d.data().isAdmin===true;$("#add").hidden=!ADM;$("#uidb").hidden=ADM;$("#hd").hidden=false;console.log("UID:",U.uid,"isAdmin:",ADM);
  try{const[a,b,c,w]=await Promise.all([getDocs(collection(db,"movies")),getDocs(collection(db,"users",U.uid,"progress")),getDocs(collection(db,"users",U.uid,"ratings")),getDocs(collection(db,"users",U.uid,"list"))]);W={};w.forEach(x=>W[x.id]=1);T("/trending/all/week").then(r=>{TR=(r.results||[]).map(x=>x.media_type+"-"+x.id);render()}).catch(()=>{});
  M={};a.forEach(x=>M[x.id]={...x.data(),id:x.id});P={};b.forEach(x=>P[x.id]=x.data());R={};c.forEach(x=>R[x.id]=x.data().r)}catch(e){toast("Не удалось загрузить каталог. Проверьте правила Firestore")}
  render()}
@@ -168,7 +168,7 @@ function render(){const all=Object.values(M).sort((a,b)=>b.added-a.added),q=S.q.
  Object.entries(gc).sort((a,b)=>b[1]-a[1]).slice(0,6).forEach(([g])=>h+=rowH(g,L.filter(m=>m.genres.includes(g))));
  $("#app").innerHTML=h+"</main>"}
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{S.v=b.dataset.v;document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));render()});
-$("#q").oninput=e=>{S.q=e.target.value.trim();render()};$("#out").onclick=()=>signOut(auth);
+$("#q").oninput=e=>{S.q=e.target.value.trim();render()};$("#out").onclick=()=>signOut(auth);$("#uidb").onclick=()=>{navigator.clipboard?.writeText(U.uid).catch(()=>{});toast("Ваш UID (скопирован): "+U.uid+" — он должен совпадать с ID документа в Firestore → users",12000)};
 addEventListener("scroll",()=>$("#hd").classList.toggle("s",scrollY>40));
 /* detail */
 let trT;
