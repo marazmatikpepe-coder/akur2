@@ -107,7 +107,7 @@ main{margin-top:-40px;position:relative;z-index:2}
 <button data-r="1">★</button><button data-r="2">★</button><button data-r="3">★</button><button data-r="4">★</button><button data-r="5">★</button></div><button data-close>Пропустить</button></div></div>
 <span id="tm"></span>
 <div class="pc"><div class="bar" id="bar"><i id="bf"></i></div><div class="pr">
-<button id="pp">⏸</button><button id="b-">⟲10</button><button id="b+">10⟳</button><button id="mu">🔊</button>
+<button id="pp">⏸</button><button id="bm">⟲10</button><button id="bp">10⟳</button><button id="mu">🔊</button>
 <span class="pt" id="pt"></span><button id="nx">⏭</button><button id="eb">☰</button><button id="sd">1×</button><button id="fs">⛶</button></div></div></div>
 <div id="toast"></div>
 <script type="module">
@@ -230,7 +230,7 @@ const bump=()=>{PL.classList.remove("hid");clearTimeout(hideT);hideT=setTimeout(
 PL.addEventListener("mousemove",bump);PL.addEventListener("touchstart",bump);
 const tog=()=>V.paused?V.play():V.pause(),seek=d=>{V.currentTime=Math.min(Math.max(V.currentTime+d,0),V.duration||1e9)};
 V.onclick=tog;V.onplay=()=>$("#pp").textContent="⏸";V.onpause=()=>{$("#pp").textContent="▶";bump()};
-$("#pp").onclick=tog;$("#b-").onclick=()=>seek(-10);$("#b+").onclick=()=>seek(10);$("#nx").onclick=()=>goEp(cur.i+1);
+$("#pp").onclick=tog;$("#bm").onclick=()=>seek(-10);$("#bp").onclick=()=>seek(10);$("#nx").onclick=()=>goEp(cur.i+1);
 $("#mu").onclick=()=>{V.muted=!V.muted;$("#mu").textContent=V.muted?"🔇":"🔊"};
 $("#eb").onclick=()=>{const e=$("#el");e.style.display=e.style.display==="block"?"none":"block"};
 $("#sd").onclick=()=>{const s=[1,1.25,1.5,2,.75],n=s[(s.indexOf(V.playbackRate)+1)%s.length];V.playbackRate=n;$("#sd").textContent=n+"×"};
